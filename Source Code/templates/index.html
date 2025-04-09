@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>义眼盯真——图像篡改检测系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="/static/logo.png" type="image/png">
+</head>
+<body>
+    <div class="container">
+        <div class="header-container">
+            <img src="/static/logo.png" class="title-logo" alt="系统Logo">
+            <h1>义眼盯真——AI图像真实性检测系统</h1>
+        </div>
+
+        <div class="upload-box">
+            <label class="custom-upload">
+                📤 选择图片
+                <input type="file" id="fileInput" name="file" accept="image/*">
+            </label>
+            <div class="detect-btns">
+                <button class="model-btn ps-detection" data-model="ps">
+                    🖌️ PS检测
+                </button>
+                <button class="model-btn faceapp-detection" data-model="faceapp">
+                    🤖 FaceApp检测
+                </button>
+            </div>
+        </div>
+
+
+        <div id="resultSection" class="hidden">
+            <div class="comparison-container">
+                <div class="image-card">
+                    <h3>原始图片</h3>
+                    <div class="image-container">
+                        <img id="originalImage" src="" alt="原始图片">
+                    </div>
+                </div>
+                <div class="image-card">
+                    <h3>检测结果</h3>
+                    <div class="image-container">
+                        <img id="processedImage" src="" alt="处理结果">
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-box">
+                <h3>分析报告</h3>
+                <p id="reportText"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>正在分析图片，预计需要5-10秒...</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
