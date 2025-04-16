@@ -1,0 +1,79 @@
+<!DOCTYPE HTML>
+<!-- image_detect.html -->
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>义眼盯真——图像篡改检测系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/image_style.css') }}" />
+    <!-- 引入 cropperjs 的 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="navbar">
+        <img src="/static/images/logo.png" alt="" width="100">
+        <div class="nav-links">
+            <a href="/">首页</a>
+            <a href="/image_detect">图像检测</a>
+            <a href="/video_detect">视频检测</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="upload-box">
+            <label class="custom-upload">
+                选择图片
+                <input type="file" id="fileInput" name="file" accept="image/*">
+            </label>
+            <!-- 新增裁剪区域容器 -->
+            <div id="cropperContainer">
+                <img id="imageToCrop" src="" alt="">
+            </div>
+            <div class="detect-btns">
+                <button class="model-btn ps-detection" data-model="ps">
+                    PS检测
+                </button>
+                <button class="model-btn faceapp-detection" data-model="faceapp">
+                    FaceApp检测
+                </button>
+            </div>
+        </div>
+
+        <div id="resultSection" class="hidden">
+            <div class="comparison-container">
+                <div class="image-card">
+                    <h3>原始图片（可拖动对图片进行缩放裁剪）</h3>
+                    <div class="image-container">
+                        <img id="originalImage" src="" alt="">
+                    </div>
+                </div>
+                <div class="image-card">
+                    <h3>检测结果</h3>
+                    <div class="image-container">
+                        <img id="processedImage" src="" alt="">
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-box">
+                <h3>分析报告</h3>
+                <p id="reportText"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>正在分析图片，预计需要1-3秒...</p>
+        </div>
+    </div>
+
+    <!-- 引入 cropperjs 的 JavaScript 文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="/static/js/image_script.js"></script>
+</body>
+
+</html>

@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, request, jsonify, send_from_directory
 import os
 import uuid
@@ -18,9 +19,16 @@ def allowed_file(filename):
 def index():
     return render_template('index.html')
 
+@app.route('/image_detect')
+def image_detect():
+    return render_template('image_detect.html')
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
+@app.route('/video_detect')
+def CGdetect():
+    return render_template('video_detect.html')
+
+@app.route('/yolo_detect', methods=['POST'])
+def yolo_detect():
     # 获取模型类型参数
     model_type = request.form.get('model_type', 'ps')
     if model_type not in ['ps', 'faceapp']:
@@ -48,15 +56,30 @@ def upload_file():
         processed_path = os.path.join(Config.PROCESSED_DIR, processed_filename)
 
         try:
-            # 调用检测模型（传入model_type参数）
-            detect_tampering(original_path,processed_path,model_type=model_type)
-            # 生成文字报告
-            report = generate_report(processed_path)
-
+            # 调用检测模型
+            detect_tampering(original_path, processed_path, model_type=model_type)
         except Exception as e:
             return jsonify({'error': f'Model error: {str(e)}'}), 500
 
-        # 存储数据库记录（
+        return jsonify({
+            'processed_url': f'/processed/{processed_filename}',
+            'processed_path': processed_path,
+            'model_type': model_type
+        })
+
+    return jsonify({'error': 'Invalid file type'}), 400
+
+@app.route('/generate_report', methods=['POST'])
+def generate_report_route():
+    data = request.get_json()
+    processed_path = data.get('processed_path')
+    model_type = data.get('model_type')
+
+    try:
+        # 生成文字报告
+        report = generate_report(processed_path)
+
+        # 存储数据库记录
         conn = create_connection()
         try:
             with conn.cursor() as cursor:
@@ -64,8 +87,8 @@ def upload_file():
                     (original_filename, processed_filename, report_text) 
                     VALUES (%s, %s, %s)"""
                 cursor.execute(sql, (
-                    original_filename,
-                    processed_filename,
+                    os.path.basename(processed_path).replace('_processed.png', '_original.png'),
+                    os.path.basename(processed_path),
                     report
                 ))
             conn.commit()
@@ -73,18 +96,15 @@ def upload_file():
             conn.close()
 
         return jsonify({
-            'processed_url': f'/processed/{processed_filename}',
             'report': report,
-            'model_type': model_type  # 保持返回参数供前端使用
+            'model_type': model_type
         })
-
-    return jsonify({'error': 'Invalid file type'}), 400
-
+    except Exception as e:
+        return jsonify({'error': f'Report generation error: {str(e)}'}), 500
 
 @app.route('/processed/<filename>')
 def send_processed_image(filename):
     return send_from_directory(Config.PROCESSED_DIR, filename)
-
 
 if __name__ == '__main__':
     os.makedirs(Config.ORIGINAL_DIR, exist_ok=True)

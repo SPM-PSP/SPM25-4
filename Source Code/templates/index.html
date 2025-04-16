@@ -1,63 +1,110 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
+
 <html>
-<head>
-    <title>义眼盯真——图像篡改检测系统</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" href="/static/logo.png" type="image/png">
-</head>
-<body>
-    <div class="container">
-        <div class="header-container">
-            <img src="/static/logo.png" class="title-logo" alt="系统Logo">
-            <h1>义眼盯真——AI图像真实性检测系统</h1>
-        </div>
+	<head>
+		<title>义眼盯真</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/noscript.css') }}" /></noscript>
+	</head>
+	<body class="is-loading-0 is-loading-1 is-loading-2">
 
-        <div class="upload-box">
-            <label class="custom-upload">
-                📤 选择图片
-                <input type="file" id="fileInput" name="file" accept="image/*">
-            </label>
-            <div class="detect-btns">
-                <button class="model-btn ps-detection" data-model="ps">
-                    🖌️ PS检测
-                </button>
-                <button class="model-btn faceapp-detection" data-model="faceapp">
-                    🤖 FaceApp检测
-                </button>
-            </div>
-        </div>
+		<!-- Main -->
+			<div id="main">
 
+				<!-- Header -->
+					<header id="header">
+					<div class="logohead">
+						<img src="/static/images/logo.png" alt="" width="150">
+					</div>
+						<h1 class="text-center">义眼盯真</h1>
+						<p class="text-center">帮你勘破虚妄的好帮手</p>
+					<button class="dynamic-btn"  id="upload-btn">
+    					<span class="default-text">火眼金睛</span>
+						<span class="hover-text">让我们开始吧</span>
+    					<div class="scan-line"></div>
+					</button>
+					</header>
 
-        <div id="resultSection" class="hidden">
-            <div class="comparison-container">
-                <div class="image-card">
-                    <h3>原始图片</h3>
-                    <div class="image-container">
-                        <img id="originalImage" src="" alt="原始图片">
-                    </div>
-                </div>
-                <div class="image-card">
-                    <h3>检测结果</h3>
-                    <div class="image-container">
-                        <img id="processedImage" src="" alt="处理结果">
-                    </div>
-                </div>
-            </div>
+				<!-- Thumbnail -->
+					<section id="thumbnails">
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/02.jpg" data-position="left center"><img src="/static/images/thumbs/02.jpg" alt="" /></a>
+							<h2>Carp , Nature , Slippers</h2>
+							<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/01.jpg"><img src="/static/images/thumbs/01.jpg" alt="" /></a>
+							<h2>Ladybug Insect Nature</h2>
+							<p>Sed velit lacus, laoreet at venenatis convallis in lorem tincidunt.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/03.jpg" data-position="top center"><img src="/static/images/thumbs/03.jpg" alt="" /></a>
+							<h2>Bokeh Close Up Nature</h2>
+							<p>Maecenas eleifend tellus ut turpis eleifend, vitae pretium faucibus.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/04.jpg"><img src="/static/images/thumbs/04.jpg" alt="" /></a>
+							<h2>Sloe Nature Crop Berry</h2>
+							<p>Tristique in nulla vel congue. Sed sociis natoque parturient nascetur.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/05.jpg" data-position="top center"><img src="/static/images/thumbs/05.jpg" alt="" /></a>
+							<h2>Kingfisher Bird Aviary Color Nature Animal Beak</h2>
+							<p>In pellentesque cursus velit id posuere. Donec vehicula nulla.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/06.jpg"><img src="/static/images/thumbs/06.jpg" alt="" /></a>
+							<h2>Stork Bird Animal Fly White Stork Rattle Stork</h2>
+							<p>Nulla dignissim libero maximus tellus varius dictum ut posuere magna.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/07.jpg"><img src="/static/images/thumbs/07.jpg" alt="" /></a>
+							<h2>Butterfly Nature Living Nature</h2>
+							<p>Etiam ultricies, lorem quis efficitur porttitor, facilisis ante orci urna.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/08.jpg"><img src="/static/images/thumbs/08.jpg" alt="" /></a>
+							<h2>Ladybug Insect Nature Meadow</h2>
+							<p>Nunc egestas congue lorem. Nullam dictum placerat ex sapien tortor mattis.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/09.jpg"><img src="/static/images/thumbs/09.jpg" alt="" /></a>
+							<h2>Morbi eget vitae adipiscing</h2>
+							<p>In quis vulputate dui. Maecenas metus elit, dictum praesent lacinia lacus.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/10.jpg"><img src="/static/images/thumbs/10.jpg" alt="" /></a>
+							<h2>Kolos Grass Meadow Field Green Nature Plant</h2>
+							<p>Vestibulum ante ipsum primis in faucibus orci luctus ac tincidunt dolor.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/04.jpg"><img src="/static/images/thumbs/04.jpg" alt="" /></a>
+							<h2>Pharetra ex non faucibus</h2>
+							<p>Ut sed magna euismod leo laoreet congue. Fusce congue enim ultricies.</p>
+						</article>
+						<article>
+							<a class="thumbnail" href="/static/images/fulls/12.jpg"><img src="/static/images/thumbs/12.jpg" alt="" /></a>
+							<h2>Flower Floral Blossom Nature Spring Summer Bloom</h2>
+							<p>Feugiat auctor leo massa, nec vestibulum nisl erat faucibus, rutrum nulla.</p>
+						</article>
+					</section>
+			</div>
 
-            <div class="report-box">
-                <h3>分析报告</h3>
-                <p id="reportText"></p>
-            </div>
-        </div>
-    </div>
+		<!-- Scripts -->
+			<script src="/static/js/jquery.min.js"></script>
+			<script src="/static/js/skel.min.js"></script>
+			<script src="/static/js/main.js"></script>
 
-    <div id="loading-overlay" class="loading-overlay">
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <p>正在分析图片，预计需要5-10秒...</p>
-        </div>
-    </div>
-
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-</body>
+			<script type="text/javascript">
+			 $('.toggle').click(function(){
+			 	$('.caption').toggle();
+			 })
+			 document.getElementById('upload-btn').addEventListener('click', function() {
+				 // 跳转到指定页面
+				 window.location.href = "/image_detect";
+			 })
+			</script>
+	</body>
 </html>
