@@ -41,8 +41,8 @@ License URI:http://www.gnu.org/licenses/gpl-2.0.html
 /* 默认文字 */
 .default-text {
  	position: relative;
-	transform: translateX(-40%);
-    top: 18%;
+	transform: translateX(-38%);
+    top: 15%;
     opacity: 1;
     font-weight: bold;
 }
@@ -936,7 +936,7 @@ License URI:http://www.gnu.org/licenses/gpl-2.0.html
 
 	#header {
 		padding: 3em 2.25em 1.75em 2.25em ;
-	
+
 		/* border: 1px solid red; */
 		background-color: #3A3C47;
 		color: white;
@@ -951,7 +951,7 @@ License URI:http://www.gnu.org/licenses/gpl-2.0.html
 
 	#footer {
 		padding: 2.25em 2.25em 1em 2.25em ;
-	
+
 		background-color: rgb(58, 60, 71);
 }
 

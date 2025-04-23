@@ -1,5 +1,4 @@
 <!DOCTYPE HTML>
-<!-- image_detect.html -->
 <html>
 
 <head>
@@ -8,6 +7,25 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/image_style.css') }}" />
     <!-- 引入 cropperjs 的 CSS 文件 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <style>
+        .upload-box {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .detect-btns {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .custom-upload {
+            margin: 0 10px;
+        }
+
+        .model-btn {
+            margin: 0 5px;
+        }
+    </style>
 </head>
 
 <body>
@@ -16,7 +34,7 @@
         <img src="/static/images/logo.png" alt="" width="100">
         <div class="nav-links">
             <a href="/">首页</a>
-            <a href="/image_detect">图像检测</a>
+            <a href="/image_detect">图片检测</a>
             <a href="/video_detect">视频检测</a>
         </div>
     </div>
@@ -27,18 +45,22 @@
                 选择图片
                 <input type="file" id="fileInput" name="file" accept="image/*">
             </label>
-            <!-- 新增裁剪区域容器 -->
-            <div id="cropperContainer">
-                <img id="imageToCrop" src="" alt="">
-            </div>
-            <div class="detect-btns">
-                <button class="model-btn ps-detection" data-model="ps">
-                    PS检测
-                </button>
-                <button class="model-btn faceapp-detection" data-model="faceapp">
-                    FaceApp检测
-                </button>
-            </div>
+            <!-- 新增导出报告按钮 -->
+            <button class="custom-upload" id="exportReportBtn">
+                导出报告
+            </button>
+        </div>
+        <div class="detect-btns">
+            <button class="model-btn ps-detection" data-model="ps">
+                拼接移动检测
+            </button>
+            <button class="model-btn faceapp-detection" data-model="faceapp">
+                FaceApp深度伪造检测
+            </button>
+        </div>
+        <!-- 新增裁剪区域容器 -->
+        <div id="cropperContainer">
+            <img id="imageToCrop" src="" alt="">
         </div>
 
         <div id="resultSection" class="hidden">
@@ -58,8 +80,13 @@
             </div>
 
             <div class="report-box">
-                <h3>分析报告</h3>
-                <p id="reportText"></p>
+                <!-- 修改标题 -->
+                <h3>AI图片分析助手</h3>
+                <div id="chatBox">
+                    <div id="chatMessages"></div>
+                    <textarea id="questionInput" placeholder="请输入你的问题" rows="4"></textarea>
+                    <button id="sendQuestion">发送</button>
+                </div>
             </div>
         </div>
     </div>
@@ -67,13 +94,16 @@
     <div id="loading-overlay" class="loading-overlay">
         <div class="loading-content">
             <div class="spinner"></div>
-            <p>正在分析图片，预计需要1-3秒...</p>
+            <p>正在分析图片，预计需要1 - 3秒...</p>
         </div>
     </div>
 
     <!-- 引入 cropperjs 的 JavaScript 文件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="/static/js/image_script.js"></script>
+    <!-- 引入 jsPDF 和 html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 
 </html>

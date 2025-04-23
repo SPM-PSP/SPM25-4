@@ -32,7 +32,7 @@ class Inference:
     Methods:
         web_ui: Sets up the Streamlit web interface with custom HTML elements.
         sidebar: Configures the Streamlit sidebar for model and inference settings.
-        source_upload: Handles video file uploads through the Streamlit interface.
+        source_upload: Handles video file images_uploads through the Streamlit interface.
         configure: Configures the model and loads selected classes for inference.
         inference: Performs real-time object detection inference.
 
@@ -110,7 +110,7 @@ class Inference:
         self.ann_frame = col2.empty()
 
     def source_upload(self):
-        """Handles video file uploads through the Streamlit interface."""
+        """Handles video file images_uploads through the Streamlit interface."""
         self.vid_file_name = ""
         if self.source == "video":
             vid_file = self.st.sidebar.file_uploader("Upload Video File", type=["mp4", "mov", "avi", "mkv"])

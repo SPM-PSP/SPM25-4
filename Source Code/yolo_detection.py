@@ -1,11 +1,11 @@
-# yolo_detection.py
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from ultralytics import YOLO
 from config import Config
+import time
 
-def detect_tampering(original_path,processed_path,model_type):
+def detect_tampering(original_path, processed_path, model_type):
     if model_type == 'ps':
         model = YOLO(Config.PS_MODEL_PATH)
     elif model_type == 'faceapp':
@@ -15,11 +15,19 @@ def detect_tampering(original_path,processed_path,model_type):
 
     # 推理
     results = model(original_path)
+
+    report_data = {
+        "objects": []
+    }
+
     # 遍历推理结果
     for result in results:
         # 获取预测的边界框、类别和置信度
         boxes = result.boxes.cpu().numpy()
         confidences = boxes.conf  # 置信度信息
+        class_ids = boxes.cls.astype(int)  # 类别 ID
+        class_names = result.names  # 类别名称字典
+
         # 获取预测的掩膜
         masks = result.masks
         if masks is not None:
@@ -42,17 +50,38 @@ def detect_tampering(original_path,processed_path,model_type):
         # 加载中文字体
         font = ImageFont.truetype("simhei.ttf", font_size)  # 使用动态计算的字号
 
+        # 检测到的目标数量
+        num_objects = len(boxes)
+        report_data["num_objects"] = num_objects
+
         # 可视化边界框和文本
         for i in range(len(boxes)):
             # 获取边界框坐标
             x1, y1, x2, y2 = boxes[i].xyxy[0].astype(int)
+            # 计算中心点坐标
+            center_x = int((x1 + x2) / 2)
+            center_y = int((y1 + y2) / 2)
+
             # 绘制边界框
             draw.rectangle((x1, y1, x2, y2), outline=(0, 255, 0), width=2)
+
+            # 获取类别名称
+            class_id = class_ids[i]
+            class_name = class_names[class_id]
+
             # 修改显示的文字信息
             confidence = confidences[i]
-            text = f'置信度: {confidence:.2f}'
+            text = f'置信度 {confidence:.2f}'
             # 使用 PIL 绘制中文文本
             draw.text((x1, y1 - font_size), text, font=font, fill=(0, 255, 0))
+
+            object_info = {
+                "class_name": class_name,
+                "confidence": float(confidence),
+                "center_x": center_x,
+                "center_y": center_y
+            }
+            report_data["objects"].append(object_info)
 
         # 绘制掩膜
         if masks is not None:
@@ -70,3 +99,5 @@ def detect_tampering(original_path,processed_path,model_type):
 
         # 保存最终结果
         cv2.imwrite(processed_path, cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR))
+
+    return report_data
