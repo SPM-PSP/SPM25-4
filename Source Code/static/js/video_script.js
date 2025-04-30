@@ -1,7 +1,8 @@
 // DOM元素引用
 const fileInput = document.getElementById('fileInput');
 const loadingOverlay = document.getElementById('loading-overlay');
-const videoPreview = document.getElementById('videoPreview');
+const originalVideo = document.getElementById('originalVideo');
+const processedVideo = document.getElementById('processedVideo');
 const resultSection = document.getElementById('resultSection');
 const reportText = document.getElementById('reportText');
 const uploadButton = document.querySelector('.upload-btn');
@@ -15,9 +16,10 @@ const processingProgressText = document.getElementById('processingProgressText')
 
 let videoDuration;
 let selectedFile;
+let fileId;
 
 // 检查DOM元素是否正确获取
-if (!fileInput ||!loadingOverlay ||!videoPreview ||!resultSection ||!reportText ||!uploadButton ||!startDetectButton ||!uploadProgressBar ||!uploadProgress ||!uploadProgressText ||!processingProgressBar ||!processingProgress ||!processingProgressText) {
+if (!fileInput ||!loadingOverlay ||!originalVideo ||!processedVideo ||!resultSection ||!reportText ||!uploadButton ||!startDetectButton ||!uploadProgressBar ||!uploadProgress ||!uploadProgressText ||!processingProgressBar ||!processingProgress ||!processingProgressText) {
     console.error('部分DOM元素未正确获取，请检查HTML结构。');
 }
 
@@ -33,12 +35,12 @@ function handleFileSelect() {
     if (this.files && this.files[0]) {
         selectedFile = this.files[0];
         const url = URL.createObjectURL(selectedFile);
-        videoPreview.src = url;
-        videoPreview.onloadedmetadata = () => {
-            videoDuration = videoPreview.duration;
+        originalVideo.src = url;
+        originalVideo.onloadedmetadata = () => {
+            videoDuration = originalVideo.duration;
             if (videoDuration > 300) {
                 alert('请选择5分钟以内的视频');
-                videoPreview.src = '';
+                originalVideo.src = '';
                 fileInput.value = '';
                 selectedFile = null;
             }
@@ -70,6 +72,7 @@ function handleUploadClick() {
                         uploadProgressBar.style.display = 'none';
                         processingProgressBar.style.display = 'block';
                         startProcessingProgress(response.total_frames);
+                        fileId = response.file_id; // 从响应中获取 file_id
                     } else {
                         alert('上传失败: ' + response.error);
                     }
@@ -116,8 +119,41 @@ function startProcessingProgress(totalFrames) {
 }
 
 function handleStartDetectClick() {
-    // 暂时没有功能，等待后续添加
-    alert('开始检测功能暂未实现。');
+    if (fileId) {
+        const data = {
+            file_id: fileId,
+            original_ext: selectedFile.name.split('.').pop().toLowerCase()
+        };
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/start_detection', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        alert('检测和视频生成完成');
+                        hideLoading(); // 隐藏加载状态
+                        reportText.textContent = '检测和视频生成完成';
+                        // 设置处理后视频的URL
+                        processedVideo.src = response.processed_video_url;
+                    } else {
+                        alert('检测和视频生成失败: ' + response.error);
+                        hideLoading(); // 隐藏加载状态
+                    }
+                } else {
+                    alert('检测和视频生成失败: ' + xhr.statusText);
+                    hideLoading(); // 隐藏加载状态
+                }
+            }
+        };
+
+        showLoading();
+        xhr.send(JSON.stringify(data));
+    } else {
+        alert('文件ID未获取到，请重新上传视频');
+    }
 }
 
 // 加载状态控制

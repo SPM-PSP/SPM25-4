@@ -95,15 +95,22 @@ h1 {
     display: none;
 }
 
-#videoPreviewContainer {
-    margin-top: 20px;
+.video-container {
+    display: flex;
+    gap: 20px;
+}
+
+#originalVideoContainer,
+#processedVideoContainer {
+    flex: 1;
     border: 1px solid #ccc;
     border-radius: 5px;
     padding: 10px;
     background-color: white;
 }
 
-#videoPreview {
+#originalVideo,
+#processedVideo {
     width: 100%;
     max-height: 400px;
 }
@@ -258,4 +265,14 @@ h1 {
         margin-right: 0;
         margin-bottom: 15px;
     }
-}    
+
+   .video-container {
+        flex-direction: column;
+    }
+}
+
+.video-label {
+    text-align: center;
+    margin-bottom: 5px;
+    font-weight: bold;
+}

@@ -39,8 +39,15 @@
                 <span class="progress-text" id="processingProgressText"></span>
             </div>
         </div>
-        <div id="videoPreviewContainer">
-            <video id="videoPreview" controls></video>
+        <div class="video-container">
+            <div id="originalVideoContainer">
+                <p class="video-label">原视频预览</p>
+                <video id="originalVideo" controls></video>
+            </div>
+            <div id="processedVideoContainer">
+                <p class="video-label">视频处理结果</p>
+                <video id="processedVideo" controls></video>
+            </div>
         </div>
 
         <div id="resultSection" class="hidden">

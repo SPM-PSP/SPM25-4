@@ -1,8 +1,6 @@
 import cv2
 import os
 import sys
-import time
-from database.db_utils import insert_video_record
 
 
 def extract_frames(video_path, output_folder, fps=15):
@@ -28,10 +26,6 @@ def extract_frames(video_path, output_folder, fps=15):
             break
     cap.release()
 
-    # 存储视频记录到数据库
-    original_filename = os.path.basename(video_path)
-    frame_folder_name = os.path.basename(output_folder)
-    insert_video_record(original_filename, frame_folder_name)
 
 
 if __name__ == "__main__":

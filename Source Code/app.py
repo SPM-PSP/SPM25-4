@@ -1,35 +1,30 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
 import os
 import uuid
-from config import Config
-from database.db_utils import init_db, create_connection
-from yolo_detection import detect_tampering
-from llm_report import generate_report, generate_followup_response
 import subprocess
 import threading
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+import cv2
+from datetime import datetime
+
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
+from config import Config
+from database.db_utils import init_db, insert_detection_result, insert_image_record, \
+    get_detected_objects, get_detection_result_id, get_image_report, get_full_detection_data, insert_video_record
+from pdf_generator import ReportGenerator
+from yolo_detection import detect_tampering
+from llm_report import generate_report, generate_followup_response
+
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-from datetime import datetime
-from PIL import Image
-
 # 注册支持中文的字体，这里以 SimHei 为例，确保系统中有该字体文件
 pdfmetrics.registerFont(TTFont('SimHei', 'SimHei.ttf'))
 
 app = Flask(__name__)
 app.config.from_object(Config)
-# 设置最大请求体大小为 1GB
-app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024 * 1024
 init_db()
-
 
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
-
 
 @app.route('/')
 def index():
@@ -74,41 +69,19 @@ def yolo_detect():
         # 保存处理结果
         processed_path = os.path.join(Config.PROCESSED_DIR, processed_filename)
 
+        # 存储数据库记录
         try:
             # 调用检测模型
             report_data = detect_tampering(original_path, processed_path, model_type=model_type)
-        except Exception as e:
-            return jsonify({'error': f'Model error: {str(e)}'}), 500
 
-        # 存储数据库记录
-        conn = create_connection()
-        try:
-            with conn.cursor() as cursor:
-                # 插入主报告信息
-                sql = """INSERT INTO detection_results (processed_filename) VALUES (%s)"""
-                cursor.execute(sql, (processed_filename,))
+            # 调用数据库操作
+            insert_detection_result(
+                processed_filename=processed_filename,
+                objects=report_data["objects"]
+            )
 
-                # 获取插入的主记录的 ID
-                detection_result_id = cursor.lastrowid
-
-                # 插入每个检测对象的信息
-                for obj in report_data["objects"]:
-                    sql = """INSERT INTO detected_objects 
-                             (detection_result_id, class_name, confidence, center_x, center_y) 
-                             VALUES (%s, %s, %s, %s, %s)"""
-                    cursor.execute(sql, (
-                        detection_result_id,
-                        obj["class_name"],
-                        obj["confidence"],
-                        obj["center_x"],
-                        obj["center_y"]
-                    ))
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            return jsonify({'error': f'Database error: {str(e)}'}), 500
-        finally:
-            conn.close()
+        except Exception as e:  # 统一捕获模型和数据库异常
+            return jsonify({'error': f'Internal error: {str(e)}'}), 500
 
         return jsonify({
             'processed_url': f'/processed/{processed_filename}',
@@ -124,30 +97,28 @@ def generate_report_route():
     data = request.get_json()
     processed_path = data.get('processed_path')
     model_type = data.get('model_type')
+
     try:
         # 生成文字报告
         report = generate_report(processed_path)
-        # 存储数据库记录
-        conn = create_connection()
-        created_at = datetime.now()
-        try:
-            with conn.cursor() as cursor:
-                sql = """INSERT INTO images 
-                    (original_filename, processed_filename, report_text, created_at) 
-                    VALUES (%s, %s, %s, %s)"""
-                cursor.execute(sql, (
-                    os.path.basename(processed_path).replace('_processed.png', '_original.png'),
-                    os.path.basename(processed_path),
-                    report,
-                    created_at
-                ))
-            conn.commit()
-        finally:
-            conn.close()
+
+        # 计算文件名参数
+        original_filename = os.path.basename(processed_path).replace('_processed.png', '_original.png')
+        processed_filename = os.path.basename(processed_path)
+
+        # 调用解耦后的数据库操作
+        insert_image_record(
+            original_filename=original_filename,
+            processed_filename=processed_filename,
+            report_text=report,
+            created_at=datetime.now()
+        )
+
         return jsonify({
             'report': report,
             'model_type': model_type
         })
+
     except Exception as e:
         return jsonify({'error': f'Report generation error: {str(e)}'}), 500
 
@@ -172,15 +143,14 @@ def generate_followup():
 def send_processed_image(filename):
     return send_from_directory(Config.PROCESSED_DIR, filename)
 
-
 @app.route('/upload_video', methods=['POST'])
 def upload_video():
     if 'video' not in request.files:
-        return jsonify({'error': 'No video part', 'success': False}), 400
+        return jsonify({'error': 'No video part','success': False}), 400
 
     video = request.files['video']
     if video.filename == '':
-        return jsonify({'error': 'No selected video', 'success': False}), 400
+        return jsonify({'error': 'No selected video','success': False}), 400
 
     if video and allowed_file(video.filename):
         # 生成唯一文件名
@@ -190,29 +160,61 @@ def upload_video():
         original_path = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'original', original_filename)
         video.save(original_path)
 
-        # 启动视频处理线程
-        def process_video():
+        # 启动视频预处理线程
+        def preprocess_video():
             try:
                 subprocess.run(['python', 'video_preprocess.py', original_path, file_id], check=True)
             except subprocess.CalledProcessError as e:
-                print(f"视频处理出错: {e}")
+                print(f"视频预处理出错: {e}")
 
-        threading.Thread(target=process_video).start()
+        threading.Thread(target=preprocess_video).start()
 
         # 获取视频总帧数
-        import cv2
         cap = cv2.VideoCapture(original_path)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         cap.release()
 
-        return jsonify({'success': True, 'total_frames': total_frames})
+        return jsonify({'success': True, 'total_frames': total_frames, 'file_id': file_id})
 
-    return jsonify({'error': 'Invalid video', 'success': False}), 400
+    return jsonify({'error': 'Invalid video','success': False}), 400
 
+@app.route('/start_detection', methods=['POST'])
+def start_detection():
+    # 从请求中获取 file_id
+    data = request.get_json()
+    file_id = data.get('file_id')
+    if not file_id:
+        return jsonify({'error': 'No file_id provided','success': False}), 400
+
+    original_ext = data.get('original_ext')
+    original_filename = f"{file_id}_original.{original_ext}"
+
+    try:
+        # 使用AI模型处理帧
+        frame_folder = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'frame', file_id)
+        processed_frame_folder = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'processed_frame', file_id)
+        os.makedirs(processed_frame_folder, exist_ok=True)
+        subprocess.run(['python', 'frame_detection.py', frame_folder, processed_frame_folder], check=True)
+
+        # 合成处理后的视频
+        processed_video_filename = f"processed_{original_filename}"
+        processed_video_path = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'processed_video', processed_video_filename)
+        subprocess.run(['python', 'video_generator.py', processed_frame_folder, processed_video_path], check=True)
+
+        # 插入数据库记录
+        frame_folder_name = file_id
+        insert_video_record(original_filename, frame_folder_name)
+
+        # 返回处理后视频的URL
+        processed_video_url = f"/processed_video/{processed_video_filename}"
+        return jsonify({'success': True,'message': 'Detection and video generation completed', 'processed_video_url': processed_video_url}), 200
+    except subprocess.CalledProcessError as e:
+        print(f"检测和视频生成出错: {e}")
+        return jsonify({'error': 'Error during detection and video generation','success': False}), 500
 
 @app.route('/check_processing_progress')
 def check_processing_progress():
-    # 这里简单模拟处理进度，实际可根据视频处理情况更新
+    # 简单模拟处理视频处理进度
     try:
         with open('processing_progress.txt', 'r') as f:
             processed_frames = int(f.read())
@@ -220,148 +222,65 @@ def check_processing_progress():
         processed_frames = 0
     return jsonify({'processed_frames': processed_frames})
 
+@app.route('/processed_video/<filename>')
+def serve_processed_video(filename):
+    return send_from_directory(os.path.join(Config.VIDEOS_UPLOADS_DIR, 'processed_video'), filename)
 
 @app.route('/get_detection_info', methods=['POST'])
 def get_detection_info():
     data = request.get_json()
     processed_filename = data.get('processed_filename')
 
-    if processed_filename is None:
-        return jsonify({'error': 'Missing processed_filename in request data'}), 400
+    if not processed_filename:
+        return jsonify({'error': 'Missing processed_filename'}), 400
 
-    conn = create_connection()
     try:
-        with conn.cursor() as cursor:
-            # 获取检测结果ID
-            cursor.execute("SELECT id FROM detection_results WHERE processed_filename = %s", (processed_filename,))
-            detection_result_id = cursor.fetchone()
-            if detection_result_id is None:
-                return jsonify({'error': 'Detection results not found for the given processed_filename'}), 404
+        # 获取检测结果ID
+        result_id = get_detection_result_id(processed_filename)
+        if not result_id:
+            return jsonify({'error': 'Detection results not found'}), 404
 
-            detection_result_idn = detection_result_id[0]
-            # 获取目标检测信息
-            cursor.execute(
-                "SELECT class_name, confidence, center_x, center_y FROM detected_objects WHERE detection_result_id = %s",
-                (detection_result_idn,))
-            detection_info = cursor.fetchall()
+        # 获取检测对象信息
+        detection_info = get_detected_objects(result_id)
+        return jsonify({'detection_info': detection_info})
 
-            result = [
-                {
-                    'class_name': row[0],
-                    'confidence': row[1],
-                    'center_x': row[2],
-                    'center_y': row[3]
-                }
-                for row in detection_info
-            ]
-
-            return jsonify({'detection_info': result})
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 500
     except Exception as e:
-        return jsonify({'error': f'Database error: {str(e)}'}), 500
-    finally:
-        conn.close()
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
 
 
 @app.route('/export_report', methods=['POST'])
 def export_report():
+    # 请求参数处理
     data = request.get_json()
-    processed_filename = data.get('processed_filename')
-    processed_filename=processed_filename.split('\\')[-1]
+    raw_filename = data.get('processed_filename')
+    if not raw_filename:
+        return jsonify({'error': 'Missing filename'}), 400
 
-    if processed_filename is None:
-        return jsonify({'error': 'Missing processed_filename in request data'}), 400
-
-    conn = create_connection()
     try:
-        with conn.cursor() as cursor:
-            # 获取LLM报告结果和检测完成时间
-            cursor.execute("SELECT report_text, created_at FROM images WHERE processed_filename = %s",
-                           (processed_filename,))
-            image_info = cursor.fetchone()
-            if image_info is None:
-                return jsonify({'error': 'Report text not found for the given processed_filename'}), 404
+        # 文件名标准化处理
+        processed_filename = raw_filename.split('\\')[-1]
 
-            report_text= str(image_info.get('report_text'))
-            created_at = str(image_info.get('created_at'))
+        # 获取报告数据
+        base_info = get_image_report(processed_filename)
+        detection_objects = get_full_detection_data(processed_filename)
 
-            # 获取检测结果ID
-            cursor.execute("SELECT id FROM detection_results WHERE processed_filename = %s", (processed_filename,))
-            detection_result_id = cursor.fetchone()
-            if detection_result_id is None:
-                return jsonify({'error': 'Detection results not found for the given processed_filename'}), 404
+        # 生成PDF报告
+        report_data = {
+            **base_info,
+            "detection_objects": detection_objects
+        }
+        pdf_path = ReportGenerator(Config).generate_pdf(processed_filename, report_data)
 
-            detection_result_idn = detection_result_id.get('id')
+        return send_file(pdf_path, as_attachment=True)
 
-            # 获取目标检测信息
-            cursor.execute(
-                "SELECT class_name, confidence, center_x, center_y FROM detected_objects WHERE detection_result_id = %s",
-                (detection_result_idn,))
-            detection_info = cursor.fetchall()
-            detection_info_text = '\n'.join(
-                [f'类别: {row["class_name"]}, 置信度: {row["confidence"]}, 中心坐标: ({row["center_x"]}, {row["center_y"]})'
-                 for row in detection_info])
-            # 将换行符替换为<br/>标签
-            detection_info_text_html = detection_info_text.replace('\n', '<br/>')
-
-            # 生成PDF报告
-            pdf_path = os.path.join(Config.REPORT_DIR, f'{processed_filename.replace(".png", ".pdf")}')
-            c = canvas.Canvas(pdf_path, pagesize=letter)
-
-            # 添加标题
-            c.setFont('SimHei', 20)
-            c.drawString(50, 750, '图像篡改检测报告')
-
-            # 添加检测完成时间
-            c.setFont('SimHei', 12)
-            timestr='检测完成时间:'+created_at
-            c.drawString(50, 720, timestr)
-
-            # 添加原始图片
-            original_image_path = os.path.join(Config.ORIGINAL_DIR,
-                                               processed_filename.replace('_processed.png', '_original.jpg'))
-            if os.path.exists(original_image_path):
-                try:
-                    img = Image.open(original_image_path)
-                    img_width, img_height = img.size
-                    aspect = img_height / float(img_width)
-                    c.drawImage(original_image_path, 50, 500, width=200, height=(200 * aspect))
-                except Exception as img_error:
-                    print(f"添加原始图片时出错: {img_error}")
-
-            # 添加处理后图片
-            processed_image_path = os.path.join(Config.PROCESSED_DIR, processed_filename)
-            if os.path.exists(processed_image_path):
-                try:
-                    img = Image.open(processed_image_path)
-                    img_width, img_height = img.size
-                    aspect = img_height / float(img_width)
-                    c.drawImage(processed_image_path, 50, 250, width=200, height=(200 * aspect))
-                except Exception as img_error:
-                    print(f"添加处理后图片时出错: {img_error}")
-
-            # 添加LLM报告
-            styleSheet = getSampleStyleSheet()
-            style = styleSheet['Normal']
-            style.fontName = 'SimHei'
-            style.fontSize = 12
-            para = Paragraph(report_text, style)
-            para.wrapOn(c, 500, 700)
-            para.drawOn(c, 50, 670)
-
-            # 添加目标检测信息
-            c.showPage()
-            c.setFont('SimHei', 12)
-            c.drawString(50, 760, '目标检测信息')
-            para = Paragraph(detection_info_text_html, style)
-            para.wrapOn(c, 500, 700)
-            para.drawOn(c, 50, 720)
-
-            c.save()
-            return send_file(pdf_path, as_attachment=True)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 500
     except Exception as e:
-        return jsonify({'error': f'PDF generation error: {str(e)}'}), 500
-    finally:
-        conn.close()
+        return jsonify({'error': f'PDF生成失败: {str(e)}'}), 500
 
 
 if __name__ == '__main__':

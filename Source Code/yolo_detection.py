@@ -38,7 +38,7 @@ def detect_tampering(original_path, processed_path, model_type):
         height, width = image.shape[:2]
 
         # 根据图片宽度动态计算字号
-        font_size = int(width * 0.03)  # 可根据实际情况调整比例
+        font_size = int(width * 0.05)  # 可根据实际情况调整比例
         if font_size < 10:
             font_size = 10  # 确保字号不小于 10
 
@@ -71,7 +71,7 @@ def detect_tampering(original_path, processed_path, model_type):
 
             # 修改显示的文字信息
             confidence = confidences[i]
-            text = f'置信度 {confidence:.2f}'
+            text = f'篡改概率: {confidence:.2f}'
             # 使用 PIL 绘制中文文本
             draw.text((x1, y1 - font_size), text, font=font, fill=(0, 255, 0))
 
@@ -95,7 +95,7 @@ def detect_tampering(original_path, processed_path, model_type):
                 # 将掩膜绘制到空白图像上
                 mask_image = Image.blend(mask_image, mask_img, alpha=0.4)
             # 将绘制好掩膜的图像与原始图像融合
-            pil_image = Image.blend(pil_image, mask_image, alpha=0.5)
+            pil_image = Image.blend(pil_image, mask_image, alpha=0.4)
 
         # 保存最终结果
         cv2.imwrite(processed_path, cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR))
