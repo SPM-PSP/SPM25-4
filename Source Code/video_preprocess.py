@@ -1,7 +1,7 @@
 import cv2
 import os
 import sys
-
+from config import Config
 
 def extract_frames(video_path, output_folder, fps=15):
     cap = cv2.VideoCapture(video_path)
@@ -20,7 +20,7 @@ def extract_frames(video_path, output_folder, fps=15):
                 cv2.imwrite(frame_filename, frame)
             frame_count += 1
             # 保存处理进度
-            with open('processing_progress.txt', 'w') as f:
+            with open(Config.PROGRESS_TXT_PATH, 'w') as f:
                 f.write(str(frame_count))
         else:
             break
@@ -31,5 +31,5 @@ def extract_frames(video_path, output_folder, fps=15):
 if __name__ == "__main__":
     video_path = sys.argv[1]
     file_id = sys.argv[2]
-    output_folder = os.path.join('videos_uploads', 'frame', file_id)
+    output_folder = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'frame', file_id)
     extract_frames(video_path, output_folder)

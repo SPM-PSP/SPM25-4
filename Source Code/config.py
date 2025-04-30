@@ -5,18 +5,20 @@ class Config:
     UPLOAD_FOLDER = 'images_uploads'
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'tif', 'mp4', 'avi', 'mov', 'mpg', 'mpeg', 'mkv'}
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB限制
-    REPORT_DIR='images_uploads/reports'
+
+
     # MySQL数据库配置
     MYSQL_HOST = 'localhost'
     MYSQL_USER = 'root'
     MYSQL_PASSWORD = '123456'
     MYSQL_DB = 'image_db'
 
-    # 路径配置
+    # 目录路径配置
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    PROCESSED_DIR = os.path.join(BASE_DIR, 'images_uploads/processed')
-    ORIGINAL_DIR = os.path.join(BASE_DIR, 'images_uploads/original')
-    VIDEOS_UPLOADS_DIR=os.path.join(BASE_DIR, 'videos_uploads')
+    PROCESSED_DIR = os.path.join(BASE_DIR, 'user_uploads/images_uploads/processed')
+    ORIGINAL_DIR = os.path.join(BASE_DIR, 'user_uploads/images_uploads/original')
+    VIDEOS_UPLOADS_DIR=os.path.join(BASE_DIR, 'user_uploads/videos_uploads')
+    REPORT_DIR = os.path.join(BASE_DIR,'user_uploads/images_uploads/reports')
 
     # 大语言模型API配置
     API_KEY = 'Bearer sk-N5SRoE71R7b6hQstssjz7GNA9kgEmGw8796lFwxLhZmwv6WG'
@@ -30,3 +32,7 @@ class Config:
     # 图像篡改识别模型配置
     PS_MODEL_PATH = "weights/ps.pt"
     FACEAPP_MODEL_PATH = "weights/faceapp.pt"
+    DEEPFAKE_MODEL_PATH = "weights/deepfake.pt"
+
+    # 临时文件路径配置
+    PROGRESS_TXT_PATH = "user_uploads/videos_uploads/temp/progress.txt"

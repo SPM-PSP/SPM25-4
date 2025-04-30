@@ -7,11 +7,11 @@ from datetime import datetime
 
 from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
 from config import Config
-from database.db_utils import init_db, insert_detection_result, insert_image_record, \
+from db_utils import init_db, insert_detection_result, insert_image_record, \
     get_detected_objects, get_detection_result_id, get_image_report, get_full_detection_data, insert_video_record
 from pdf_generator import ReportGenerator
-from yolo_detection import detect_tampering
-from llm_report import generate_report, generate_followup_response
+from image_detector import detect_tampering
+from llm_reporter import generate_report, generate_followup_response
 
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -194,7 +194,7 @@ def start_detection():
         frame_folder = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'frame', file_id)
         processed_frame_folder = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'processed_frame', file_id)
         os.makedirs(processed_frame_folder, exist_ok=True)
-        subprocess.run(['python', 'frame_detection.py', frame_folder, processed_frame_folder], check=True)
+        subprocess.run(['python', 'frame_detector.py', frame_folder, processed_frame_folder], check=True)
 
         # 合成处理后的视频
         processed_video_filename = f"processed_{original_filename}"
@@ -216,7 +216,7 @@ def start_detection():
 def check_processing_progress():
     # 简单模拟处理视频处理进度
     try:
-        with open('processing_progress.txt', 'r') as f:
+        with open(Config.PROGRESS_TXT_PATH, 'r') as f:
             processed_frames = int(f.read())
     except FileNotFoundError:
         processed_frames = 0

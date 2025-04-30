@@ -3,7 +3,6 @@ import os
 import re
 import sys
 
-
 def natural_sort_key(s):
     """按文件名中的数字自然排序"""
     return [int(text) if text.isdigit() else text.lower()
