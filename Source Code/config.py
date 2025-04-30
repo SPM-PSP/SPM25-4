@@ -36,3 +36,4 @@ class Config:
 
     # 临时文件路径配置
     PROGRESS_TXT_PATH = "user_uploads/videos_uploads/temp/progress.txt"
+

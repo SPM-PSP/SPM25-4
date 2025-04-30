@@ -7,11 +7,11 @@ from datetime import datetime
 
 from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
 from config import Config
-from db_utils import init_db, insert_detection_result, insert_image_record, \
+from utils.db_utils import init_db, insert_detection_result, insert_image_record, \
     get_detected_objects, get_detection_result_id, get_image_report, get_full_detection_data, insert_video_record
-from pdf_generator import ReportGenerator
-from image_detector import detect_tampering
-from llm_reporter import generate_report, generate_followup_response
+from utils.pdf_generator import ReportGenerator
+from utils.image_detector import detect_tampering
+from utils.llm_reporter import generate_report, generate_followup_response
 
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -163,7 +163,7 @@ def upload_video():
         # 启动视频预处理线程
         def preprocess_video():
             try:
-                subprocess.run(['python', 'video_preprocess.py', original_path, file_id], check=True)
+                subprocess.run(['python', 'utils/video_preprocess.py', original_path, file_id], check=True)
             except subprocess.CalledProcessError as e:
                 print(f"视频预处理出错: {e}")
 
@@ -194,12 +194,12 @@ def start_detection():
         frame_folder = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'frame', file_id)
         processed_frame_folder = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'processed_frame', file_id)
         os.makedirs(processed_frame_folder, exist_ok=True)
-        subprocess.run(['python', 'frame_detector.py', frame_folder, processed_frame_folder], check=True)
+        subprocess.run(['python', 'utils/frame_detector.py', frame_folder, processed_frame_folder], check=True)
 
         # 合成处理后的视频
         processed_video_filename = f"processed_{original_filename}"
         processed_video_path = os.path.join(Config.VIDEOS_UPLOADS_DIR, 'processed_video', processed_video_filename)
-        subprocess.run(['python', 'video_generator.py', processed_frame_folder, processed_video_path], check=True)
+        subprocess.run(['python', 'utils/video_generator.py', processed_frame_folder, processed_video_path], check=True)
 
         # 插入数据库记录
         frame_folder_name = file_id
