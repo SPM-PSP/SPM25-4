@@ -3,7 +3,6 @@ from unittest.mock import patch, MagicMock
 import json
 from utils.llm_reporter import generate_report, generate_followup_response
 
-
 class MockConfig:
     API_ENDPOINT = 'test_api_endpoint'
     API_MODEL = 'test_api_model'
