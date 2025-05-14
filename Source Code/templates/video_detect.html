@@ -1,0 +1,71 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>义眼盯真——视频篡改检测系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/video_style.css') }}" />
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="navbar">
+        <img src="/static/images/logo.png" alt="" width="100">
+        <div class="nav-links">
+            <a href="/">首页</a>
+            <a href="/image_detect">图片检测</a>
+            <a href="/video_detect">视频检测</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="upload-box">
+            <label class="custom-upload">
+                选择视频（5分钟以内）
+                <input type="file" id="fileInput" name="file" accept="video/*">
+            </label>
+            <button class="model-btn upload-btn" data-model="video">
+                上传视频
+            </button>
+            <button class="model-btn start-detect-btn" data-model="video" disabled>
+                开始检测
+            </button>
+            <div id="uploadProgressBar" class="progress-bar">
+                <div class="progress" id="uploadProgress"></div>
+                <span class="progress-text" id="uploadProgressText"></span>
+            </div>
+            <div id="processingProgressBar" class="progress-bar">
+                <div class="progress" id="processingProgress"></div>
+                <span class="progress-text" id="processingProgressText"></span>
+            </div>
+        </div>
+        <div class="video-container">
+            <div id="originalVideoContainer">
+                <p class="video-label">原视频预览</p>
+                <video id="originalVideo" controls></video>
+            </div>
+            <div id="processedVideoContainer">
+                <p class="video-label">视频处理结果</p>
+                <video id="processedVideo" controls></video>
+            </div>
+        </div>
+
+        <div id="resultSection" class="hidden">
+            <div class="report-box">
+                <h3>视频检测结果</h3>
+                <div id="reportText"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>正在处理视频，预计需要一些时间...</p>
+        </div>
+    </div>
+
+    <script src="/static/js/video_script.js"></script>
+</body>
+
+</html>
