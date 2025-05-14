@@ -1,9 +1,0 @@
-Flask==3.1.0
-imageio==2.37.0
-numpy==2.2.5
-opencv_contrib_python==4.11.0.86
-Pillow==11.2.1
-PyMySQL==1.1.1
-reportlab==4.3.1
-tqdm==4.67.1
-ultralytics==8.3.121
